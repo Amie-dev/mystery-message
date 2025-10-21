@@ -11,47 +11,48 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       id: "credentials",
       name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials: any): Promise<any> {
-        await dbConnect();
-        try {
-          const user = await User.findOne({
-            $or: [
-              { email: credentials.email },
-              { username: credentials.email },
-            ],
-          });
+     credentials: {
+  identifier: { label: "Username or Email", type: "text" },
+  password: { label: "Password", type: "password" },
+},
+async authorize(credentials: any): Promise<any> {
+  await dbConnect();
+  try {
+    const user = await User.findOne({
+      $or: [
+        { email: credentials.identifier },
+        { username: credentials.identifier },
+      ],
+    });
 
-          if (!user) {
-            throw new Error("User not found");
-          }
+    if (!user) {
+      throw new Error("User not found");
+    }
 
-          if (!user.isVerified) {
-            throw new Error("Please verify your email before logging in.");
-          }
+    if (!user.isVerified) {
+      throw new Error("Please verify your email before logging in.");
+    }
 
-          const isPasswordCorrect = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
+    const isPasswordCorrect = await bcrypt.compare(
+      credentials.password,
+      user.password
+    );
 
-          if (!isPasswordCorrect) {
-            throw new Error("Incorrect password");
-          }
+    if (!isPasswordCorrect) {
+      throw new Error("Incorrect password");
+    }
 
-          return {
-            id: user._id,
-            name: user.username,
-            email: user.email,
-          };
-        } catch (error: any) {
-          console.error("Authorization error:", error);
-          throw new Error("Authentication failed");
-        }
-      },
+    return {
+      id: user._id,
+      name: user.username,
+      email: user.email,
+    };
+  } catch (error: any) {
+    console.error("Authorization error:", error);
+    throw new Error("Authentication failed");
+  }
+}
+
     }),
   ],
   callbacks: {
